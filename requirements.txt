@@ -18,3 +18,5 @@ python-dotenv==1.0.1
 matplotlib==3.9.2
 
 docx2pdf==0.1.8
+
+pytz==2024.2
