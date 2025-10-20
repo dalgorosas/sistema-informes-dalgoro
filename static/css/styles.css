@@ -1,0 +1,146 @@
+/* ===========================
+   DALGORO · Design System v1
+   Profesional, moderno, tecnológico, amigable
+   =========================== */
+
+/* Paleta principal (dark tech + acento cobre) */
+:root{
+  --bg-0:#0a192f;         /* fondo principal */
+  --bg-1:#0f2547;         /* capas sutiles */
+  --card:#112240;         /* tarjetas */
+  --ink:#e6f6fb;          /* texto principal */
+  --muted:#a9bcd0;        /* texto secundario */
+  --line:#233554;         /* bordes */
+  --brand:#00b4d8;        /* acento turquesa */
+  --brand-2:#48cae4;      /* acento claro */
+  --accent:#c48756;       /* cobre (guiño del logo) */
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+/* Reset mínimo y tipografía */
+*{ box-sizing:border-box }
+html,body{ height:100% }
+body.theme-dark{
+  margin:0; background:var(--bg-0); color:var(--ink);
+  font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+
+/* Contenedor que usas en templates */
+.container{
+  max-width: 1080px;       /* ↑ más aire visual */
+  margin: 0 auto; padding: 0 20px;
+  background: transparent; box-shadow: none; border-radius: 0;
+}
+
+/* ====== HERO con logo protagonista ====== */
+.hero{
+  position:relative; overflow:hidden;
+  background:
+    radial-gradient(1200px 420px at 20% 0%, rgba(0,180,216,.18), transparent 60%),
+    linear-gradient(180deg, #0d213e 0%, #0a192f 60%);
+  padding: 36px 0 24px 0;
+  border-bottom:1px solid var(--line);
+}
+.hero__overlay{ position:absolute; inset:0; pointer-events:none; }
+.hero__inner{ display:flex; align-items:center; justify-content:center; }
+.brand{ display:flex; align-items:center; gap:16px; }
+.brand--centered{ justify-content:center; }
+.brand__logo-small {
+  height: 80px; /* un poco más grande */
+  width: auto;
+  filter: drop-shadow(0 4px 8px rgba(0, 180, 216, 0.25))
+          drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+.brand__logo-small:hover {
+  transform: scale(1.03);
+  filter: drop-shadow(0 6px 14px rgba(0,180,216,0.35))
+          drop-shadow(0 3px 8px rgba(0,0,0,0.4));
+}
+
+.brand__text{ display:flex; flex-direction:column; }
+.brand__title{
+  font-weight:800; font-size: clamp(28px, 4vw, 36px);
+  letter-spacing:.4px; color:var(--ink);
+}
+.brand__sub{ color:var(--muted); }
+
+/* ====== LAYOUT de página ====== */
+.page{ margin: 28px 0; }
+.page-title{
+  font-size: clamp(22px, 3vw, 28px);
+  margin: 0 0 14px 0; font-weight:700; color:var(--ink);
+}
+
+/* ====== TARJETAS (glass) ====== */
+.card{
+  background: var(--card);
+  border:1px solid var(--line);
+  border-radius:16px; padding:18px; margin-bottom:18px;
+  box-shadow: var(--shadow);
+}
+.card.glass{
+  background: rgba(17,34,64,.72); backdrop-filter: blur(8px);
+}
+.card__title{ margin:0 0 6px 0; color:var(--brand); font-weight:700; }
+.card__subtitle{ margin:.5rem 0; color:var(--brand-2) }
+.card__hint{ color:var(--muted); margin:.25rem 0 .75rem 0 }
+
+/* ====== FORM GRID ====== */
+.form-grid{
+  display:grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+@media (max-width: 960px){ .form-grid{ grid-template-columns:1fr } }
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field--action{ align-self:end }
+
+/* Controles */
+label{ color:var(--brand-2); font-weight:600; }
+input[type="text"], input[type="number"], input[type="date"],
+textarea, select{
+  width:100%; padding:12px 14px;
+  border:1px solid var(--line); border-radius:12px;
+  background:#0d223d; color:var(--ink);
+  transition:border .15s ease, box-shadow .15s ease, background .15s ease;
+}
+textarea{ resize:vertical }
+input:focus, textarea:focus, select:focus{
+  outline: none; border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(0,180,216,.18);
+}
+
+/* ====== BOTONES ====== */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  background:var(--brand); color:#fff; border:0; border-radius:12px;
+  padding:12px 16px; font-weight:800; letter-spacing:.2px; cursor:pointer;
+  box-shadow: 0 10px 22px rgba(0,180,216,.28);
+  transition: transform .06s ease, box-shadow .2s ease, background .2s ease;
+}
+.btn:hover{ background:var(--brand-2); transform: translateY(-1px) }
+.btn:active{ transform: translateY(0) }
+.btn:focus-visible{ outline:2px solid rgba(0,180,216,.55); outline-offset:2px }
+.btn-cta{
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  box-shadow: 0 12px 26px rgba(0,180,216,.35);
+}
+.btn-glass{
+  background: rgba(255,255,255,.06);
+  border:1px solid var(--line); color:var(--ink);
+}
+
+/* ====== UTILIDADES ====== */
+.divider{ height:1px; background:var(--line); margin:14px 0 }
+.preview{ list-style:none; padding:0; margin:.5rem 0 0 0 }
+.preview li{ margin:.25rem 0; color:#cfe9f3 }
+.center{ text-align:center }
+
+/* ====== FOOTER ====== */
+.footer{ text-align:center; color:var(--muted); padding: 22px 0 32px 0; }
+.footer .container{ background:transparent; box-shadow:none }
+
+/* ====== Motion preferente ====== */
+@media (prefers-reduced-motion:no-preference){
+  .card, .btn { transition: transform .08s ease, background .2s ease, box-shadow .2s ease }
+}

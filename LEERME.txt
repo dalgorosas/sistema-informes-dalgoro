@@ -1,0 +1,10 @@
+para correr en VS code (local):
+uvicorn app.main:app --reload
+
+Para abrir en el navegador (local):
+http://127.0.0.1:8000/
+
+Para abrir desde celular en local
+http://<TU_IP_LOCAL>:8000 - debes de identificar tu IP local en Símbolo del sistema así: 
+CDM - correr el código ipconfig - identificar Dirección IPv4 - escribir esa IP en <TU_IP_LOCAL>
+

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="page-title">Generador de Informes</h1>
+
+<!-- Tarjeta 1: Cargar desde Google Sheets -->
+<section class="card glass">
+  <h2 class="card__title">1️⃣ Cargar datos desde Google Sheets</h2>
+  <p class="card__hint">Ingresa el <b>ID de informe</b> que exista en la hoja <b>"Informes"</b> y previsualiza los datos.</p>
+
+  <form method="get" action="/previsualizar" class="form-grid">
+    <div class="field">
+      <label>ID de informe</label>
+      <input name="id_informe" placeholder="ej: INF-2025-001" required value="{{ row['id_informe'] if row else '' }}">
+    </div>
+    <div class="field field--action">
+      <button type="submit" class="btn">Cargar desde Google Sheets</button>
+    </div>
+  </form>
+
+  {% if row %}
+  <div class="divider"></div>
+  <h3 class="card__subtitle">Datos cargados (Proyecto + Informe)</h3>
+  <ul class="preview">
+    <!-- Proyecto -->
+    <li><b>proyecto_id:</b> {{ row.get('proyecto_id','') }}</li>
+    <li><b>nombre_proyecto:</b> {{ row.get('nombre_proyecto','') }}</li>
+    <li><b>promotor_representante:</b> {{ row.get('promotor_representante','') }}</li>
+    <li><b>licencia_ambiental:</b> {{ row.get('licencia_ambiental','') }}</li>
+    <li><b>sector_productivo:</b> {{ row.get('sector_productivo','') }}</li>
+    <li><b>ubicacion_politica:</b> {{ row.get('ubicacion_politica','') }}</li>
+    <li><b>area:</b> {{ row.get('area','') }}</li>
+
+    <!-- Compatibilidad anterior -->
+    <li><b>Proyecto (texto):</b> {{ row.get('proyecto','') }}</li>
+    <li><b>Cliente:</b> {{ row.get('cliente','') }}</li>
+
+    <!-- Informe -->
+    <li><b>Fecha:</b> {{ row.get('fecha','') }}</li>
+    <li><b>Responsable:</b> {{ row.get('responsable','') }}</li>
+
+    <!-- Técnicos -->
+    <li><b>Objetivo de la visita:</b> {{ row.get('objetivo_visita','') }}</li>
+    <li><b>Metodología:</b> {{ row.get('metodologia','') }}</li>
+    <li><b>Descripción:</b> {{ row.get('descripcion','') }}</li>
+    <li><b>Hallazgos:</b> {{ row.get('hallazgos','') }}</li>
+    <li><b>Conformidades:</b> {{ row.get('conformidades','') }}</li>
+    <li><b>No conformidades:</b> {{ row.get('no_conformidades','') }}</li>
+    <li><b>Acciones inmediatas:</b> {{ row.get('acciones_inmediatas','') }}</li>
+    <li><b>Conclusiones:</b> {{ row.get('conclusiones','') }}</li>
+    <li><b>Recomendaciones:</b> {{ row.get('recomendaciones','') }}</li>
+    <li><b>Nivel de cumplimiento (%):</b> {{ row.get('nivel_cumplimiento','') }}</li>
+
+    <!-- Imágenes -->
+    <li><b>Imágenes (IDs/URLs):</b> {{ row.get('imagenes_drive_ids','') }}</li>
+  </ul>
+
+  <form method="post" action="/generar_desde_sheet" class="center">
+    <input type="hidden" name="id_informe" value="{{ row['id_informe'] }}">
+    <button type="submit" class="btn btn-cta">📝 Generar informe desde hoja</button>
+  </form>
+  {% endif %}
+</section>
+
+<!-- Tarjeta 2: Datos del Proyecto -->
+<section class="card glass">
+  <h2 class="card__title">2️⃣ Datos del Proyecto</h2>
+  <p class="card__hint">Puedes seleccionar un proyecto existente para autollenar o escribirlo manualmente.</p>
+
+  <div class="form-grid">
+    <div class="field">
+      <label>Proyecto (selecciona uno)</label>
+      <select name="proyecto_id" id="proyecto_id">
+        <option value="">-- Sin proyecto (manual) --</option>
+        {% for p in projects or [] %}
+          <option value="{{ p.get('proyecto_id','') }}"
+            {% if row and row.get('proyecto_id','') == p.get('proyecto_id','') %}selected{% endif %}>
+            {{ p.get('proyecto_id','') }} — {{ p.get('nombre_proyecto','') }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field field--action">
+      <button type="button" id="btn-rellenar" class="btn btn-glass" title="Rellenar campos usando el proyecto seleccionado">
+        🔄 Rellenar
+      </button>
+    </div>
+  </div>
+
+  <div class="form-grid">
+    <div class="field">
+      <label>Nombre del proyecto (manual)</label>
+      <input name="nombre_proyecto" id="nombre_proyecto" value="{{ row['nombre_proyecto'] if row else '' }}">
+    </div>
+
+    <div class="field">
+      <label>Proyecto (texto)</label>
+      <input name="proyecto" id="proyecto" required value="{{ row['proyecto'] if row else '' }}">
+    </div>
+
+    <div class="field">
+      <label>Cliente</label>
+      <input name="cliente" id="cliente" required value="{{ row['cliente'] if row else '' }}">
+    </div>
+
+    <div class="field">
+      <label>Responsable</label>
+      <input name="responsable" id="responsable" required value="{{ row['responsable'] if row else '' }}">
+    </div>
+
+    <div class="field">
+      <label>Fecha</label>
+      <input name="fecha" placeholder="YYYY-MM-DD" required value="{{ row['fecha'] if row else '' }}">
+    </div>
+  </div>
+</section>
+
+<!-- Tarjeta 3: Detalle Técnico -->
+<section class="card glass">
+  <h2 class="card__title">3️⃣ Detalle Técnico</h2>
+
+  <form method="post" action="/generar">
+    <!-- Mantengo los name= exactos -->
+    <input type="hidden" name="proyecto_id" id="proyecto_id_hidden" value="">
+    <input type="hidden" name="nombre_proyecto" id="nombre_proyecto_hidden" value="">
+    <input type="hidden" name="proyecto" id="proyecto_hidden" value="">
+    <input type="hidden" name="cliente" id="cliente_hidden" value="">
+    <input type="hidden" name="responsable" id="responsable_hidden" value="">
+    <input type="hidden" name="fecha" id="fecha_hidden" value="">
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Objetivo de la visita</label>
+        <textarea name="objetivo_visita" rows="2">{{ row['objetivo_visita'] if row else '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>Metodología</label>
+        <textarea name="metodologia" rows="2">{{ row['metodologia'] if row else '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>Descripción</label>
+        <textarea name="descripcion" rows="4">{{ row['descripcion'] if row else '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>Hallazgos</label>
+        <textarea name="hallazgos" rows="4">{{ row['hallazgos'] if row else '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>Conformidades</label>
+        <textarea name="conformidades" rows="3">{{ row['conformidades'] if row else '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>No conformidades</label>
+        <textarea name="no_conformidades" rows="3">{{ row['no_conformidades'] if row else '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>Acciones inmediatas</label>
+        <textarea name="acciones_inmediatas" rows="3">{{ row['acciones_inmediatas'] if row else '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>Conclusiones</label>
+        <textarea name="conclusiones" rows="3">{{ row['conclusiones'] if row else '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>Recomendaciones</label>
+        <textarea name="recomendaciones" rows="3">{{ row['recomendaciones'] if row else '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>Nivel de cumplimiento (%)</label>
+        <input name="nivel_cumplimiento" type="number" min="0" max="100" step="0.1" value="{{ row['nivel_cumplimiento'] if row else '' }}">
+      </div>
+
+      <div class="field">
+        <label>Imágenes (IDs o URLs de Drive, separadas por coma)</label>
+        <input name="imagenes_drive_ids" placeholder="id1,id2,https://drive.google.com/file/d/ID/view"
+               value="{{ row['imagenes_drive_ids'] if row else '' }}">
+      </div>
+    </div>
+
+    <div class="center">
+      <button type="submit" class="btn btn-cta">⚡ Generar Informe</button>
+    </div>
+  </form>
+</section>
+
+<script>
+  // Lista de proyectos disponible en el template
+  const PROJECTS = {{ (projects or []) | tojson }};
+  const $ = (sel) => document.querySelector(sel);
+
+  const mapProyecto = (pid) => {
+    if (!pid) return null;
+    return PROJECTS.find(p => String(p.proyecto_id || '').trim() === String(pid).trim()) || null;
+  };
+
+  function fillFromProyecto(){
+    const pid = $('#proyecto_id')?.value || '';
+    const p = mapProyecto(pid);
+    if (!p) { alert('Selecciona un proyecto válido para autollenar.'); return; }
+
+    const nombreProyecto = p.nombre_proyecto || '';
+    const cliente        = p.cliente || '';
+    const responsable    = p.responsable_tecnico || p.responsable || '';
+
+    if ($('#nombre_proyecto')) $('#nombre_proyecto').value = nombreProyecto;
+    if ($('#proyecto'))        $('#proyecto').value        = nombreProyecto;
+    if ($('#cliente'))         $('#cliente').value         = cliente;
+    if ($('#responsable'))     $('#responsable').value     = responsable;
+  }
+
+  // Botón “Rellenar”
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btn-rellenar');
+    if (btn) btn.addEventListener('click', fillFromProyecto);
+
+    // Sin romper tu backend: antes de enviar la tarjeta 3,
+    // copiamos los campos visibles a los hidden del form de /generar
+    const form = document.querySelector('section:nth-of-type(3) form');
+    if (form) {
+      form.addEventListener('submit', () => {
+        $('#proyecto_id_hidden').value   = $('#proyecto_id')?.value || '';
+        $('#nombre_proyecto_hidden').value = $('#nombre_proyecto')?.value || '';
+        $('#proyecto_hidden').value      = $('#proyecto')?.value || '';
+        $('#cliente_hidden').value       = $('#cliente')?.value || '';
+        $('#responsable_hidden').value   = $('#responsable')?.value || '';
+        $('#fecha_hidden').value         = document.querySelector('input[name="fecha"]')?.value || '';
+      });
+    }
+  });
+</script>
+{% endblock %}

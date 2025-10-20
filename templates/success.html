@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="card glass success">
+  <div class="success__icon">✔</div>
+  <h2 class="card__title">Informe generado correctamente</h2>
+  <p class="card__hint">Tu archivo está listo para descargar.</p>
+
+  {% if numero_informe %}
+    <p style="margin:.5rem 0;"><strong>Nº de Informe:</strong> {{ numero_informe }}</p>
+  {% endif %}
+
+  {% if filename %}
+    <div class="file-chip">
+      <span class="file-chip__dot"></span>
+      {{ filename }}
+    </div>
+  {% endif %}
+
+  <!-- Botón DOCX -->
+  <div class="center" style="margin-top:1rem;">
+    <a href="/descargar/{{ filename }}" class="btn btn-cta">⬇ Descargar (.docx)</a>
+  </div>
+
+  <!-- Botón PDF si existe -->
+  {% if filename_pdf %}
+  <div class="center" style="margin-top:.5rem;">
+    <a href="/descargar/{{ filename_pdf }}" class="btn btn-cta">⬇ Descargar (.pdf)</a>
+  </div>
+  {% else %}
+  <div class="center" style="margin-top:.5rem;color:#a9bcd0;">
+    <small>* La exportación a PDF requiere Microsoft Word (docx2pdf) o LibreOffice configurado.</small>
+  </div>
+  {% endif %}
+
+  <!-- Volver -->
+  <div class="center" style="margin-top:.75rem;">
+    <a href="/" class="btn btn-ghost">Crear otro informe</a>
+  </div>
+</section>
+
+{% endblock %}

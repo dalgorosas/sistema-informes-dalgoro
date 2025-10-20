@@ -1,0 +1,30 @@
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+import gspread
+from .config import GOOGLE_SERVICE_ACCOUNT_FILE
+
+# Scopes: lectura Drive; y Sheets con ESCRITURA (no solo readonly)
+SCOPES = [
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/spreadsheets",
+]
+
+def get_credentials():
+    import os, json
+    json_env = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
+    if json_env:
+        info = json.loads(json_env)
+        return service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+
+    service_account_file = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "").strip()
+    if not service_account_file:
+        raise RuntimeError("No se encontró GOOGLE_SERVICE_ACCOUNT_JSON ni GOOGLE_SERVICE_ACCOUNT_FILE.")
+    return service_account.Credentials.from_service_account_file(service_account_file, scopes=SCOPES)
+
+def get_sheets_client():
+    creds = get_credentials()
+    return gspread.authorize(creds)
+
+def get_drive_service():
+    creds = get_credentials()
+    return build("drive", "v3", credentials=creds, cache_discovery=False)

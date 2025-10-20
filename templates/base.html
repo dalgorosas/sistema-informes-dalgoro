@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>DALGORO SAS · Generador de Informes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Tipografía moderna -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Color de la barra del navegador en móviles -->
+<meta name="theme-color" content="#0a192f">
+
+<!-- Preload del logo para que aparezca nítido y rápido -->
+<link rel="preload" as="image" href="{{ url_for('static', path='img/logo-color.png') }}">
+
+<!-- Tu hoja de estilos (con cache-buster en dev) -->
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=4">
+
+</head>
+<body class="theme-dark">
+  <!-- Banner superior con degradado y logo centrado -->
+  <header class="hero">
+    <div class="hero__overlay"></div>
+    <div class="container hero__inner hero__inner--centered">
+      <div class="brand brand--centered">
+        <img src="{{ url_for('static', path='img/logo-white.png') }}" alt="DALGORO" class="brand__logo-small"/>
+        <div class="brand__text">
+          <div class="brand__title">DALGORO SAS</div>
+          <div class="brand__sub">Sistema de Monitoreo de Salud,</div>
+          <div class="brand__sub">Seguridad y Ambiente</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+  <main class="container page">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <small>© Ing. Darwin A. González Romero — DALGORO SAS</small>
+    </div>
+  </footer>
+</body>
+</html>
