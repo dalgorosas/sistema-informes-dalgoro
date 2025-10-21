@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any
 import base64
 import json
 import os
+import textwrap
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -33,9 +34,32 @@ def _coerce_private_key(info: Dict[str, Any]) -> Dict[str, Any]:
         # Si detectamos que no hay saltos de línea reales, los restauramos.
         if "\\n" in key and "\n" not in key:
             info["private_key"] = key.replace("\\n", "\n")
+
+        # Normalizar fin de línea y eliminar espacios extra para evitar firmas inválidas.
+        normalized = info["private_key"].replace("\r\n", "\n").strip()
+                
         # Asegurarnos de que comience y termine correctamente para evitar firmas inválidas.
-        if "-----BEGIN" not in info["private_key"] or "-----END" not in info["private_key"]:
+        if "-----BEGIN" not in normalized or "-----END" not in normalized:
             raise RuntimeError("El private_key del servicio no parece un PEM válido. Revisa el JSON de credenciales.")
+
+        begin_marker = "-----BEGIN PRIVATE KEY-----"
+        end_marker = "-----END PRIVATE KEY-----"
+
+        if begin_marker in normalized and end_marker in normalized:
+            # Si todo está en una sola línea (caso común al copiar desde variables de entorno)
+            # reconstruimos un PEM válido con saltos de línea cada 64 caracteres.
+            body = normalized
+            if "\n" not in normalized or normalized.count("\n") < 2:
+                body = normalized.replace(begin_marker, "").replace(end_marker, "")
+                body = body.replace("\n", "").replace("\r", "")
+                wrapped = "\n".join(textwrap.wrap(body.strip(), 64))
+                normalized = f"{begin_marker}\n{wrapped}\n{end_marker}\n"
+            else:
+                # Aseguramos fin de archivo con salto de línea por compatibilidad.
+                if not normalized.endswith("\n"):
+                    normalized = f"{normalized}\n"
+
+        info["private_key"] = normalized    
     return info
 
 
