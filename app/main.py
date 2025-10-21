@@ -136,7 +136,15 @@ def previsualizar(request: Request, id_informe: str):
 
     # Enriquecer con datos del proyecto si hay proyecto_id
     proyecto_id = str(row_reporte.get("proyecto_id", "")).strip()
-    row_proyecto = get_project_by_id(proyecto_id) if proyecto_id else {}
+    row_proyecto = {}
+    if proyecto_id:
+        try:
+            fetched = get_project_by_id(proyecto_id)
+            if fetched:
+                row_proyecto = fetched
+        except Exception as exc:
+            print(f"[WARN] No se pudo obtener datos del proyecto {proyecto_id}: {exc}")
+            row_proyecto = {}    
     row = {**row_proyecto, **row_reporte}
     row["id_informe"] = id_informe
 
@@ -182,7 +190,15 @@ def generar_desde_sheet(request: Request, id_informe: str = Form(...)):
 
     # Enriquecer con datos del proyecto si hay proyecto_id
     proyecto_id = str(row_reporte.get("proyecto_id", "")).strip()
-    row_proyecto = get_project_by_id(proyecto_id) if proyecto_id else {}
+    row_proyecto = {}
+    if proyecto_id:
+        try:
+            fetched = get_project_by_id(proyecto_id)
+            if fetched:
+                row_proyecto = fetched
+        except Exception as exc:
+            print(f"[WARN] No se pudo obtener datos del proyecto {proyecto_id}: {exc}")
+            row_proyecto = {}    
     row = {**row_proyecto, **row_reporte}
 
     # === NUEVO: reservar consecutivo e inyectar numero_informe en el contexto ===
