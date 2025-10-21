@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: dalgoro-informes
+    env: docker
+    plan: starter
+    disk:
+      name: downloads
+      mountPath: /app/downloads
+      sizeGB: 1
+    envVars:
+      - key: PDF_ENABLED
+        value: auto
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: GSHEET_ID
+        sync: false
+      - key: GSHEET_TAB
+        value: Datos
+      - key: GSHEET_TAB_PROYECTOS
+        value: Proyectos
+      - key: GSHEET_TAB_REPORTES
+        value: Informes
+      - key: REPORTS_SEQ_SHEET_NAME
+        value: INFORMES_SEQ
+      - key: REPORTS_TIMEZONE
+        value: America/Guayaquil
+      - key: DOCX_TEMPLATE_PATH
+        value: report_templates/reporte_base.docx
+      - key: OUTPUT_DIR
+        value: /app/downloads
