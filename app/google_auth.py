@@ -84,6 +84,15 @@ def get_credentials():
     if json_env:
         return _credentials_from_json_str(json_env)
 
+    # >>> Añadir este guardarraíl para despliegues en PaaS
+    if not os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "").strip():
+        # Si no hay JSON ni FILE, y además no hay GOOGLE_SERVICE_ACCOUNT_FILE,
+        # vamos a fallar pronto con un mensaje claro.
+        raise RuntimeError(
+            "No hay GOOGLE_SERVICE_ACCOUNT_JSON en entorno y tampoco GOOGLE_SERVICE_ACCOUNT_FILE. "
+            "En Render debes definir GOOGLE_SERVICE_ACCOUNT_JSON con el JSON completo del Service Account."
+        )
+
     json_env_b64 = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON_B64", "").strip()
     if json_env_b64:
         try:

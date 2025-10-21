@@ -17,25 +17,28 @@ def _require_gsheet_id() -> str:
 
 
 def _open_ws(tab_name: str):
-    gc = get_sheets_client()
-    sh = gc.open_by_key(_require_gsheet_id())
-    return sh.worksheet(tab_name)
+    try:
+        gc = get_sheets_client()
+        sh = gc.open_by_key(_require_gsheet_id())
+        return sh.worksheet(tab_name)
+    except Exception as e:
+        raise RuntimeError(f"Error al abrir la hoja '{tab_name}': {e}")
 
 def _get_all_records(tab_name: str) -> List[Dict[str, Any]]:
     ws = _open_ws(tab_name)
     return ws.get_all_records()
 
 def _open_or_create_ws(tab_name: str):
-    """
-    Abre la hoja; si no existe, la crea (1x8) y la retorna.
-    """
-    gc = get_sheets_client()
-    sh = gc.open_by_key(_require_gsheet_id())
     try:
-        return sh.worksheet(tab_name)
-    except Exception:
-        sh.add_worksheet(title=tab_name, rows=1, cols=8)
-        return sh.worksheet(tab_name)
+        gc = get_sheets_client()
+        sh = gc.open_by_key(_require_gsheet_id())
+        try:
+            return sh.worksheet(tab_name)
+        except Exception:
+            sh.add_worksheet(title=tab_name, rows=1, cols=8)
+            return sh.worksheet(tab_name)
+    except Exception as e:
+        raise RuntimeError(f"No se pudo abrir/crear la hoja '{tab_name}': {e}")
 
 def ensure_headers(tab_name: str, headers: List[str]) -> None:
     """
