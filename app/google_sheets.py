@@ -8,9 +8,17 @@ from .config import REPORTS_TIMEZONE, GSHEET_TAB_REPORTES, REPORTS_SEQ_SHEET_NAM
 # -----------------------------------------
 # Utilidades internas
 # -----------------------------------------
+def _require_gsheet_id() -> str:
+    if not GSHEET_ID:
+        raise RuntimeError(
+            "GSHEET_ID no está configurado. Define la variable de entorno GSHEET_ID con el ID del Spreadsheet."
+        )
+    return GSHEET_ID
+
+
 def _open_ws(tab_name: str):
     gc = get_sheets_client()
-    sh = gc.open_by_key(GSHEET_ID)
+    sh = gc.open_by_key(_require_gsheet_id())
     return sh.worksheet(tab_name)
 
 def _get_all_records(tab_name: str) -> List[Dict[str, Any]]:
@@ -22,7 +30,7 @@ def _open_or_create_ws(tab_name: str):
     Abre la hoja; si no existe, la crea (1x8) y la retorna.
     """
     gc = get_sheets_client()
-    sh = gc.open_by_key(GSHEET_ID)
+    sh = gc.open_by_key(_require_gsheet_id())
     try:
         return sh.worksheet(tab_name)
     except Exception:

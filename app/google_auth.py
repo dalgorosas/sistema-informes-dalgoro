@@ -1,5 +1,9 @@
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
+
+import base64
+import json
+import os
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -20,13 +24,49 @@ def _default_credentials_path() -> Optional[str]:
     return None
 
 
+def _coerce_private_key(info: Dict[str, Any]) -> Dict[str, Any]:
+    """Normaliza el campo private_key para evitar errores comunes."""
+    info = dict(info)
+    key = info.get("private_key")
+    if isinstance(key, str):
+        # Render (y otros PaaS) suelen almacenar el JSON con '\\n'.
+        # Si detectamos que no hay saltos de línea reales, los restauramos.
+        if "\\n" in key and "\n" not in key:
+            info["private_key"] = key.replace("\\n", "\n")
+        # Asegurarnos de que comience y termine correctamente para evitar firmas inválidas.
+        if "-----BEGIN" not in info["private_key"] or "-----END" not in info["private_key"]:
+            raise RuntimeError("El private_key del servicio no parece un PEM válido. Revisa el JSON de credenciales.")
+    return info
+
+
+def _credentials_from_info(info: Dict[str, Any]):
+    return service_account.Credentials.from_service_account_info(_coerce_private_key(info), scopes=SCOPES)
+
+
+def _credentials_from_json_str(raw_json: str):
+    try:
+        info = json.loads(raw_json)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            "GOOGLE_SERVICE_ACCOUNT_JSON no contiene un JSON válido. "
+            "Si lo guardaste en Base64 usa GOOGLE_SERVICE_ACCOUNT_JSON_B64."
+        ) from exc
+    return _credentials_from_info(info)
+
+
 def get_credentials():
-    import os
-    import json
+    
     json_env = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
     if json_env:
-        info = json.loads(json_env)
-        return service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+        return _credentials_from_json_str(json_env)
+
+    json_env_b64 = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON_B64", "").strip()
+    if json_env_b64:
+        try:
+            decoded = base64.b64decode(json_env_b64)
+        except Exception as exc:
+            raise RuntimeError("GOOGLE_SERVICE_ACCOUNT_JSON_B64 no es un Base64 válido.") from exc
+        return _credentials_from_json_str(decoded.decode("utf-8"))        
 
     service_account_file = (GOOGLE_SERVICE_ACCOUNT_FILE or "").strip() or os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "").strip()
     if not service_account_file:
@@ -45,7 +85,9 @@ def get_credentials():
             "Verifica el valor de GOOGLE_SERVICE_ACCOUNT_FILE."
         )
 
-    return service_account.Credentials.from_service_account_file(str(path_obj), scopes=SCOPES)
+    with path_obj.open("r", encoding="utf-8") as fh:
+        info = json.load(fh)
+    return _credentials_from_info(info)    
 
 def get_sheets_client():
     creds = get_credentials()
