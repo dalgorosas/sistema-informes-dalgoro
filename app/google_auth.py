@@ -62,6 +62,11 @@ def _coerce_private_key(info: Dict[str, Any]) -> Dict[str, Any]:
         info["private_key"] = normalized    
     return info
 
+def _log_sa_info(source: str, info: Dict[str, Any]):
+    try:
+        print(f"[GOOGLE_AUTH] Source={source} client_email={info.get('client_email')} key_id={info.get('private_key_id')}")
+    except Exception:
+        pass
 
 def _credentials_from_info(info: Dict[str, Any]):
     return service_account.Credentials.from_service_account_info(_coerce_private_key(info), scopes=SCOPES)
@@ -75,57 +80,80 @@ def _credentials_from_json_str(raw_json: str):
             "GOOGLE_SERVICE_ACCOUNT_JSON no contiene un JSON válido. "
             "Si lo guardaste en Base64 usa GOOGLE_SERVICE_ACCOUNT_JSON_B64."
         ) from exc
+    _log_sa_info("ENV_JSON", info)
     return _credentials_from_info(info)
 
 
 def get_credentials():
-    
+    # 1) INTENTO: JSON plano en variable de entorno
     json_env = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
     if json_env:
-        return _credentials_from_json_str(json_env)
+        try:
+            info = json.loads(json_env)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "GOOGLE_SERVICE_ACCOUNT_JSON no contiene un JSON válido."
+            ) from exc
+        _log_sa_info("ENV_JSON", info)
+        return _credentials_from_info(info)
 
-    # >>> Añadir este guardarraíl para despliegues en PaaS
-    if not os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "").strip():
-        # Si no hay JSON ni FILE, y además no hay GOOGLE_SERVICE_ACCOUNT_FILE,
-        # vamos a fallar pronto con un mensaje claro.
-        raise RuntimeError(
-            "No hay GOOGLE_SERVICE_ACCOUNT_JSON en entorno y tampoco GOOGLE_SERVICE_ACCOUNT_FILE. "
-            "En Render debes definir GOOGLE_SERVICE_ACCOUNT_JSON con el JSON completo del Service Account."
-        )
-
+    # 2) INTENTO: JSON en Base64 en variable de entorno
     json_env_b64 = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON_B64", "").strip()
     if json_env_b64:
         try:
             decoded = base64.b64decode(json_env_b64)
+            info = json.loads(decoded.decode("utf-8"))
         except Exception as exc:
-            raise RuntimeError("GOOGLE_SERVICE_ACCOUNT_JSON_B64 no es un Base64 válido.") from exc
-        return _credentials_from_json_str(decoded.decode("utf-8"))        
+            raise RuntimeError(
+                "GOOGLE_SERVICE_ACCOUNT_JSON_B64 no es un Base64/JSON válido."
+            ) from exc
+        _log_sa_info("ENV_B64", info)
+        return _credentials_from_info(info)
 
+    # 3) INTENTO: archivo en ruta (env o por defecto en ./credentials/service_account.json)
     service_account_file = (GOOGLE_SERVICE_ACCOUNT_FILE or "").strip() or os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "").strip()
     if not service_account_file:
         service_account_file = _default_credentials_path() or ""
 
     if not service_account_file:
+        # Guardarraíl: no hay JSON, no hay B64 y tampoco ruta a archivo.
         raise RuntimeError(
-            "No se encontró GOOGLE_SERVICE_ACCOUNT_JSON ni GOOGLE_SERVICE_ACCOUNT_FILE. "
-            "Configura una de las variables o coloca el archivo en credentials/service_account.json."
+            "No se encontró GOOGLE_SERVICE_ACCOUNT_JSON ni GOOGLE_SERVICE_ACCOUNT_JSON_B64 ni GOOGLE_SERVICE_ACCOUNT_FILE. "
+            "Define una de ellas o coloca el archivo en credentials/service_account.json."
         )
 
     path_obj = Path(service_account_file)
     if not path_obj.is_file():
         raise RuntimeError(
             f"El archivo de credenciales no existe en la ruta proporcionada: {service_account_file}. "
-            "Verifica el valor de GOOGLE_SERVICE_ACCOUNT_FILE."
+            "Verifica GOOGLE_SERVICE_ACCOUNT_FILE o utiliza GOOGLE_SERVICE_ACCOUNT_JSON(_B64)."
         )
 
     with path_obj.open("r", encoding="utf-8") as fh:
         info = json.load(fh)
-    return _credentials_from_info(info)    
+    _log_sa_info("FILE", info)
+    return _credentials_from_info(info)
+
+from google.auth.transport.requests import Request
 
 def get_sheets_client():
     creds = get_credentials()
+    # Fuerza validación temprana del JWT y del token:
+    try:
+        creds.refresh(Request())
+    except Exception as e:
+        # Log explícito para identificar invalid_grant y su origen
+        print(f"[GOOGLE_AUTH] Token refresh failed: {e}")
+        raise
     return gspread.authorize(creds)
+
 
 def get_drive_service():
     creds = get_credentials()
+    try:
+        creds.refresh(Request())
+    except Exception as e:
+        print(f"[GOOGLE_AUTH] Token refresh failed (drive): {e}")
+        raise
     return build("drive", "v3", credentials=creds, cache_discovery=False)
+
